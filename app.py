@@ -13,10 +13,16 @@ def get_model():
 
 
 learn = get_model()
+# Turn folder names into friendly labels, e.g. "grizzly" -> "Grizzly bear".
+NICE_NAMES = {"not_bear": "Not a bear"}
+
+
+def pretty(label):
+    return NICE_NAMES.get(label, f"{label.capitalize()} bear")
 
 st.title("🐻 Bear Classifier")
 st.write(
-    "Upload a photo and I'll guess whether it's a **grizzly**, **black**, or **teddy** bear. "
+    "Upload a photo and I'll guess whether it's a **grizzly**, **black**, or **teddy** bear (or not a bear at all). "
     "Built by fine-tuning a ResNet-18 with fastai."
 )
 
@@ -27,9 +33,14 @@ if uploaded is not None:
     st.image(img, width=350)
 
     pred, idx, probs = learn.predict(img)
-    st.subheader(f"Prediction: {pred} bear ({float(probs[idx]):.0%} confident)")
+    confidence = float(probs[idx])
+
+    if pred == "not_bear":
+        st.subheader(f"That's not a bear! ({confidence:.0%} confident)")
+    else:
+        st.subheader(f"Prediction: {pretty(pred)} ({confidence:.0%} confident)")
 
     # Show every class's probability, highest first.
     for label, p in sorted(zip(learn.dls.vocab, probs), key=lambda x: -float(x[1])):
-        st.write(f"{label}: {float(p):.1%}")
+        st.write(f"{pretty(label)}: {float(p):.1%}")
         st.progress(float(p))
